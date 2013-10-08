@@ -1,19 +1,12 @@
 package com.ccleeric.audiobroadcast;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -25,7 +18,7 @@ public class PlayerActivity extends Activity {
     private final String TAG = "PlayerActivity";
     public static final String TOAST = "toast";
 
-    private AudioBroadcastController mController;
+    private BroadcastController mController;
     private ImageButton mAudioStop;
     private ProgressBar mWaitConnection;
     @Override
@@ -34,7 +27,7 @@ public class PlayerActivity extends Activity {
 
         Bundle bundle = getIntent().getExtras();
         boolean sender = bundle.getBoolean("Sender");
-        mController = AudioBroadcastController.getInstance();
+        mController = BroadcastController.getInstance();
         mController.setHandler(mHandler);
 
         requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);

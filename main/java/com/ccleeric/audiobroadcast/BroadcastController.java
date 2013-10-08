@@ -1,27 +1,22 @@
 package com.ccleeric.audiobroadcast;
 
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
-import android.util.Log;
-import android.widget.Toast;
 
 /**
  * Created by ccleeric on 13/9/25.
  */
-public class AudioBroadcastController implements Observer {
+public class BroadcastController {
 
     private final String TAG = "AudioBroadcastController";
 
-    private volatile static AudioBroadcastController mInstance;
+    private volatile static BroadcastController mInstance;
 
     private BluetoothManager mBtManager;
     private AudioRecorder mAudioRecorder;
@@ -30,22 +25,16 @@ public class AudioBroadcastController implements Observer {
     private Handler mHandler;
     private boolean mSender;
 
-    private AudioBroadcastController() {
-        mBtManager = new BluetoothManager();
-        mBtManager.attachObserver(this);
-
-        mAudioRecorder = new AudioRecorder();
-        mAudioRecorder.attachObserver(this);
-
-        mAudioPlayer = new AudioPlayer();
-        mAudioPlayer.attachObserver(this);
+    private BroadcastController() {
+        mBtManager = new BluetoothManager(this);
+        mAudioRecorder = new AudioRecorder(this);
+        mAudioPlayer = new AudioPlayer(this);
         mSender = false;
-
     }
 
-    public static synchronized AudioBroadcastController getInstance() {
+    public static synchronized BroadcastController getInstance() {
         if(mInstance == null) {
-            mInstance = new AudioBroadcastController();
+            mInstance = new BroadcastController();
         }
         return mInstance;
     }
@@ -110,31 +99,28 @@ public class AudioBroadcastController implements Observer {
         mHandler.sendMessage(msg);
     }
 
-    @Override
-    public void update(int action, Object args) {
-
+    public void updateView(int action, Object obj) {
         switch(action) {
             case AudioPlayer.ACTION_PLAY:
-                mAudioPlayer.play((InputStream) args);
+                mAudioPlayer.play((InputStream) obj);
                 sendMessage(action, null);
                 if(mSender) {
                     playAudio();
                 }
                 break;
             case AudioRecorder.AUDIO_SOURCE_UNSUPPORTED:
-                sendMessage(action, (String)args);
+                sendMessage(action, (String)obj);
                 mBtManager.disconnect();
                 break;
             case BluetoothManager.ACTION_CONNECT_FAILED:
-                sendMessage(action, (String)args);
+                sendMessage(action, (String)obj);
                 break;
             case BluetoothManager.ACTION_CONNECT_LOST:
                 mBtManager.connectLost();
-                sendMessage(action, (String)args);
+                sendMessage(action, (String)obj);
                 break;
             default:
                 break;
         }
-
     }
 }

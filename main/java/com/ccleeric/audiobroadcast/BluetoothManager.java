@@ -1,21 +1,18 @@
 package com.ccleeric.audiobroadcast;
 
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.UUID;
 
 /**
  * Created by ccleeric on 13/9/25.
  */
-public class BluetoothManager implements Subject{
+public class BluetoothManager implements Notifier {
 
     public static final int ACTION_CONNECT_LOST   = 0x101;
     public static final int ACTION_CONNECT_FAILED = 0x102;
@@ -36,6 +33,7 @@ public class BluetoothManager implements Subject{
     public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
 
+    private BroadcastController mController;
     private BluetoothAdapter mBtAdapter;
     private BluetoothSocket mSocket;
 
@@ -47,14 +45,12 @@ public class BluetoothManager implements Subject{
     private InputStream mAudioInStream;
     private OutputStream mAudioOutStream;
 
-    private ArrayList<Observer> mObservers;
 
-    public BluetoothManager() {
+    public BluetoothManager(BroadcastController controller) {
+        mController = controller;
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
         mSocket = null;
-
-        mObservers = new ArrayList<Observer>();
     }
 
     public BluetoothAdapter getAdapter() {
@@ -102,7 +98,7 @@ public class BluetoothManager implements Subject{
 
     public void connectFailed() {
         String msg  =  "Unable to connect device";
-        notifyObserver(BluetoothManager.ACTION_CONNECT_FAILED, msg);
+        update(BluetoothManager.ACTION_CONNECT_FAILED, msg);
 
         //Bluetooth enter listening mode
         listen();
@@ -143,7 +139,8 @@ public class BluetoothManager implements Subject{
 
         mSocket = socket;
         initAudioStreams(socket);
-        notifyObserver(AudioPlayer.ACTION_PLAY, mAudioInStream);
+        //notifyObserver(AudioPlayer.ACTION_PLAY, mAudioInStream);
+        update(AudioPlayer.ACTION_PLAY, mAudioInStream);
         mState = STATE_CONNECTED;
     }
 
@@ -186,19 +183,7 @@ public class BluetoothManager implements Subject{
     }
 
     @Override
-    public void attachObserver(Observer observer) {
-        mObservers.add(observer);
-    }
-
-    @Override
-    public void detachObserver(Observer observer) {
-        mObservers.remove(observer);
-    }
-
-    @Override
-    public void notifyObserver(int action, Object args) {
-        for(Observer obs : mObservers) {
-            obs.update(action, args);
-        }
+    public void update(int action, Object obj) {
+        mController.updateView(action, obj);
     }
 }

@@ -33,7 +33,7 @@ public class AudioBroadcast extends Activity {
     private static final int REQUEST_ENABLE_BT = 3;
     private static final int REQUEST_SETTINGS = 4;
 
-    private AudioBroadcastController mBroadcastController;
+    private BroadcastController mBroadcastController;
     private ListView mNewDevices;
     private ListView mPairedDevices;
     private TextView mTitlePairedDevices;
@@ -131,7 +131,7 @@ public class AudioBroadcast extends Activity {
 
         showPairedDevices();
 
-        mBroadcastController = AudioBroadcastController.getInstance();
+        mBroadcastController = BroadcastController.getInstance();
         mBroadcastController.setHandler(mHandler);
         mBroadcastController.setContext(this);
 

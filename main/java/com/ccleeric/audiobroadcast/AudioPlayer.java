@@ -7,12 +7,11 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 
 /**
  * Created by ccleeric on 13/9/30.
  */
-public class AudioPlayer implements Subject {
+public class AudioPlayer implements Notifier {
     private final String TAG = "AudioPlayer";
 
     public static final int ACTION_PLAY  = 0x201;
@@ -24,22 +23,23 @@ public class AudioPlayer implements Subject {
     private final int AUDIO_CHANNEL = AudioFormat.CHANNEL_IN_STEREO;    // CHANNEL_IN_MONO, CHANNEL_IN_STEREO
     private final int AUDIO_FORMAT  = AudioFormat.ENCODING_PCM_16BIT;   //ENCODING_PCM_16BIT, ENCODING_PCM_8BIT
     private final int AUDIO_TRACK_MODE = AudioTrack.MODE_STREAM;
+    private final String DEVICE_LOST_MESSAGE = "Device connection was lost";
 
+    private BroadcastController mController;
     private AudioTrack mAudioTrack;
     private Thread mPlayThread;
     private int mBufferSize;
     private byte[] mAudioData;
     private boolean mAudioStop;
-    private ArrayList<Observer> mObservers;
 
-    public AudioPlayer() {
+    public AudioPlayer(BroadcastController controller) {
+        mController = controller;
         mBufferSize = AudioTrack.getMinBufferSize(AUDIO_RATE_HZ, AUDIO_CHANNEL, AUDIO_FORMAT);
         mAudioTrack = new AudioTrack(STREAM_TYPE, AUDIO_RATE_HZ, AUDIO_CHANNEL,
                                             AUDIO_FORMAT, mBufferSize, AUDIO_TRACK_MODE);
 
         mAudioData = new byte[mBufferSize];
         mAudioStop = true;
-        mObservers = new ArrayList<Observer>();
     }
 
     public void play(final InputStream audioStream) {
@@ -54,7 +54,7 @@ public class AudioPlayer implements Subject {
             public void run() {
                 int bytes;
 
-                Log.d(TAG, "1111 Begin read audio stream!");
+                Log.d(TAG, "Begin read audio stream!");
                 mAudioTrack.play();
                 while(!mAudioStop) {
                     try {
@@ -65,8 +65,7 @@ public class AudioPlayer implements Subject {
                     } catch (IOException e) {
                         Log.e(TAG, "disconnected", e);
                         Log.d(TAG, "audio player exception!");
-                        notifyObserver(BluetoothManager.ACTION_CONNECT_LOST,
-                                                        "Device connection was lost") ;
+                        update(BluetoothManager.ACTION_CONNECT_LOST, DEVICE_LOST_MESSAGE);
                         break;
                     }
                 }
@@ -84,19 +83,7 @@ public class AudioPlayer implements Subject {
     }
 
     @Override
-    public void attachObserver(Observer observer) {
-        mObservers.add(observer);
-    }
-
-    @Override
-    public void detachObserver(Observer observer) {
-        mObservers.remove(observer);
-    }
-
-    @Override
-    public void notifyObserver(int action, Object args) {
-        for(Observer obs : mObservers) {
-            obs.update(action, args);
-        }
+    public void update(int action, Object obj) {
+        mController.updateView(action, obj);
     }
 }

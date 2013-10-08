@@ -7,12 +7,11 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 
 /**
  * Created by ccleeric on 13/9/30.
  */
-public class AudioRecorder implements Subject {
+public class AudioRecorder implements Notifier {
     private final String TAG = "AudioRecorder";
 
     public static final int AUDIO_SOURCE_UNSUPPORTED = 0x301;
@@ -21,20 +20,21 @@ public class AudioRecorder implements Subject {
     private final int AUDIO_RATE_HZ = 8000;                            //Sample Rate 44100,22050, 16000, and 11025Hz
     private final int AUDIO_CHANNEL = AudioFormat.CHANNEL_IN_STEREO;    // CHANNEL_IN_MONO, CHANNEL_IN_STEREO
     private final int AUDIO_FORMAT  = AudioFormat.ENCODING_PCM_16BIT;   //ENCODING_PCM_16BIT, ENCODING_PCM_8BIT
+    private final String AUDIO_SOURCE_ERROR = "Audio Source doesn't support!";
 
+    private BroadcastController mController;
     private AudioRecord mRecorder;
     private int mBufferSize;
     private byte[] mAudioData;
     private boolean mAudioStop;
     private Thread mRecorderThread;
-    private ArrayList<Observer> mObservers;
 
-    public AudioRecorder() {
+    public AudioRecorder(BroadcastController controller) {
+        mController = controller;
         mBufferSize = AudioRecord.getMinBufferSize(AUDIO_RATE_HZ,AUDIO_CHANNEL,AUDIO_FORMAT);
         mAudioData = new byte[mBufferSize];
 
         mAudioStop = true;
-        mObservers = new ArrayList<Observer>();
     }
 
     public void setRecordSource(String audioSource) {
@@ -68,7 +68,7 @@ public class AudioRecorder implements Subject {
                     mRecorder.startRecording();
                 } catch (IllegalStateException e) {
                     Log.e(TAG, "Audio Source doesn't support!", e);
-                    notifyObserver(AUDIO_SOURCE_UNSUPPORTED, "Audio Source doesn't support!");
+                    update(AUDIO_SOURCE_UNSUPPORTED, AUDIO_SOURCE_ERROR);
                     mRecorder.release();
                     return;
                 }
@@ -96,19 +96,7 @@ public class AudioRecorder implements Subject {
     }
 
     @Override
-    public void attachObserver(Observer observer) {
-        mObservers.add(observer);
-    }
-
-    @Override
-    public void detachObserver(Observer observer) {
-        mObservers.remove(observer);
-    }
-
-    @Override
-    public void notifyObserver(int action, Object args) {
-        for(Observer obs : mObservers) {
-            obs.update(action, args);
-        }
+    public void update(int action, Object obj) {
+        mController.updateView(action, obj);
     }
 }
